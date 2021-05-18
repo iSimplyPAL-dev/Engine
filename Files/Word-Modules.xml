@@ -1,0 +1,37 @@
+﻿<service>
+	<settings>
+		<!--
+			I seguenti settaggi verranno creati nel DB qualora
+			non esistano ancora. Se esistono gia' non verranno
+			modificati.
+		-->
+		<setting
+			name="InstallDocsCleanDays"
+			value="60"
+			description="I giorni di validita' dei documenti di installazione prima che vengano eliminati [INT]"
+		/>
+		<setting
+			name="InstallDocsInterval"
+			value="60"
+			description="Ogni quanti secondi controllare se ci sono documenti da creare [INT]"
+		/>
+	</settings>
+	<modules>
+		<!--
+			Modulo di creazione dei documenti per le installazioni
+			di impianti, contatori e serbatoi.
+									***
+			L'intervallo di importazione e' dato dal settaggio:
+			"InstallDocsInterval".
+									***
+			Altri settaggi utilizzati sono:
+			"InstallDocsCleanDays" -> Durata dei documenti
+		-->
+		<module
+			name="InstallDocsCreator"
+			assembly="InstallDocsCreator.dll"
+			class="URMET.GasProject.Modules.InstallDocsCreator"
+			priority="normal"
+		/>
+	</modules>
+</service>

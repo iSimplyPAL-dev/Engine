@@ -1,0 +1,189 @@
+/*
+#include "..\..\..\URMET\Scripts\SharpShellScript\CompileVisualStudio.cssc"
+#include "..\..\..\URMET\Scripts\SharpShellScript\CompileInnoSetup.cssc"
+*/
+
+using System;
+using Microsoft.Win32;
+using System.IO;
+using System.Diagnostics;
+using System.Threading;
+
+static class Script
+{
+    const string COPY_SETUPS_TO = @"C:\_Gas_Setups";
+    static readonly string[,] SETUPS_SCRIPTS = {
+        { "Setup-Liquigas.iss",         "Setup-Liquigas.exe" },
+        //{ "Setup-Word.iss",             "Setup-Word.exe" },
+        { "Setup-Valtellinagas.iss",    "Setup-Valtellinagas.exe" },
+        { "Setup-Totalgaz.iss",         "Setup-Totalgaz.exe" },
+        { "Setup-Butangas.iss",         "Setup-Butangas.exe" },
+        { "Setup-Ecogas.iss",           "Setup-Ecogas.exe" },
+        //{ "Source-Liquigas.iss",        "Source-Liquigas.exe" },
+        { "Web\\Web-Liquigas.iss",      "Web-Liquigas.exe" },
+        { "Web\\Web-Butangas.iss",      "Web-Butangas.exe" },
+        { "Web\\Web-Totalgaz.iss",      "Web-Totalgaz.exe" },
+        { "Web\\Web-Ecogas.iss",        "Web-Ecogas.exe" }
+    };
+
+    static volatile bool _Running = true;
+    static volatile bool _MustQuit = false;
+    static bool _FastMode = false;
+
+    static void Main(string[] args)
+    {
+        try
+        {
+            Console.CancelKeyPress += new ConsoleCancelEventHandler(OnConsoleCancel);
+            Console.WriteLine("Initializing...");
+
+            try
+            {
+                Console.BufferHeight = 8192;
+                Console.WindowWidth = 140;
+                Console.WindowHeight = 50;
+            }
+            catch
+            { }
+
+            _FastMode = (args.Length >= 2) && (string.Compare(args[1], "fast", true) == 0);
+            string folder = Path.GetDirectoryName(args[0]);
+            CompileVisualStudio.Exists();
+            CompileInnoSetup.Exists();
+
+            if(_MustQuit)
+                return;
+
+            WriteConsoleAction("COMPILING SERVICE RELEASE");
+            if(_MustQuit)
+                return;
+
+            CompileVisualStudio.Compile(Path.Combine(folder, @"..\..\SOLUTIONS\GasProjectEngine.sln"), "Release");
+            WriteConsoleInfo("Successfully compiled service.");
+
+            if(_MustQuit)
+                return;
+
+            WriteConsoleAction("COMPILING WEB RELEASE");
+            if(_MustQuit)
+                return;
+
+            CompileVisualStudio.Compile(Path.Combine(folder, @"..\..\SOLUTIONS\GasProjectWeb.sln"), "Release");
+            WriteConsoleInfo("Successfully compiled web.");
+
+            if(_MustQuit)
+                return;
+
+            for(int i = 0; i < (SETUPS_SCRIPTS.Length / 2); i++)
+            {
+                string script = SETUPS_SCRIPTS[i, 0];
+                if(string.IsNullOrEmpty(script))
+                    continue;
+
+                WriteConsoleAction("COMPILING SETUP: " + Path.GetFileNameWithoutExtension(script).ToUpper());
+                if(_MustQuit)
+                    return;
+
+                CompileInnoSetup.Compile(Path.Combine(folder, script));
+                WriteConsoleInfo("Successfully compiled script: " + Path.GetFileName(script) + '.');
+
+                if(_MustQuit)
+                    return;
+            }
+
+            WriteConsoleAction("DEPLOYING SETUP FILES");
+            if(_MustQuit)
+                return;
+
+            folder = Path.Combine(folder, "Bin");
+            bool deployed = false;
+
+            for(int i = 0; i < (SETUPS_SCRIPTS.Length / 2); i++)
+            {
+                string setup = SETUPS_SCRIPTS[i, 1];
+                if(string.IsNullOrEmpty(setup))
+                    continue;
+
+                Console.WriteLine("Copying file: {0}...", setup);
+                File.Copy(Path.Combine(folder, setup), Path.Combine(COPY_SETUPS_TO, setup), true);
+                deployed = true;
+
+                if(_MustQuit)
+                    return;
+            }
+
+            if(deployed)
+                Console.WriteLine("Files successfully copied to: \"{0}\".", COPY_SETUPS_TO);
+            else
+                Console.WriteLine("There are no files to deploy.");
+        }
+        catch(Exception ex)
+        {
+            if(!_MustQuit)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine();
+                Console.WriteLine("*** ERROR ***");
+                Console.WriteLine(ex.Message);
+                Console.ResetColor();
+            }
+        }
+        finally
+        {
+            if(!_MustQuit)
+            {
+                WriteConsoleInfo("Press any key to exit...");
+                Console.ReadKey(true);
+            }
+
+            _Running = false;
+        }
+    }
+
+    static void OnConsoleCancel(object sender, ConsoleCancelEventArgs e)
+    {
+        WriteConsoleInfo("Canceled by user. Completing current task, then exit.");
+        WriteConsoleInfo("Please wait...");
+
+        _MustQuit = true;
+        while(_Running)
+            Thread.Sleep(100);
+    }
+
+    static void WriteConsoleAction(string action)
+    {
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.WriteLine();
+        Console.WriteLine(new string('-', action.Length + 10));
+        Console.WriteLine("---- {0} ----", action.ToUpper());
+        Console.WriteLine(new string('-', action.Length + 10));
+        Console.ResetColor();
+
+        Console.CursorVisible = false;
+        Console.WriteLine();
+        Console.WriteLine();
+
+        if(!_FastMode)
+        {
+            for(int i = 5; (i > 0) && (!_MustQuit); i--)
+            {
+                Console.CursorTop--;
+                Console.WriteLine("Will start in {0} second(s)", i);
+                Thread.Sleep(1000);
+            }
+        }
+
+        Console.CursorTop--;
+        Console.WriteLine(new string(' ', 30));
+        Console.CursorTop--;
+        Console.CursorVisible = true;
+    }
+
+    static void WriteConsoleInfo(string info)
+    {
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine();
+        Console.WriteLine(info);
+        Console.ResetColor();
+    }
+}

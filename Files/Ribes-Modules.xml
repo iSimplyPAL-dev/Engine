@@ -1,0 +1,157 @@
+<service>
+	<settings>
+		<!--
+			I seguenti settaggi verranno creati nel DB qualora
+			non esistano ancora. Se esistono gia' non verranno
+			modificati.
+		-->
+		<setting
+			name="_ReportCustomNowDate"
+			value=""
+			description="La data da usare al posto di &quot;DateTime.Now&quot; nei report [dd-MM-yyyy--HH-mm-ss | EMPTY]"
+		/>
+		<setting
+			name="EventsGsmNumbers"
+			value=""
+			description="Numeri di telefono a cui spedire i messaggi sugli eventi dei serbatoi [STRING]"
+		/>
+		<setting
+			name="AdministrativeMail"
+			value="marco.francese@urmet.it;marco.cavallo@urmet.it"
+			description="Indirizzi mail a cui spedire i messaggi amministrativi [STRING]"
+		/>
+		<setting
+			name="SenderMail"
+			value="gasproject@urmet.it"
+			description="Indirizzo mail da cui spedire i messaggi [STRING]"
+		/>
+		<setting
+			name="DefaultMeterFactor"
+			value="100"
+			description="Indica il valore per moltiplicare i consumi e ottenere valori allineati [SHORT]"
+		/>
+		<setting
+			name="SmsManagerInterval"
+			value="5"
+			description="Ogni quanti secondi controllare se ci sono SMS da elaborare [INT]"
+		/>
+		<setting
+			name="SmsImportInterval"
+			value="5"
+			description="Ogni quanti secondi controllare se ci sono SMS da importare [INT]"
+		/>
+		<setting
+			name="SMTPServer"
+			value="127.0.0.1"
+			description="L'indirizzo del server SMTP usato per inviare le mail [STRING]"
+		/>
+		<setting
+			name="SRActivityBuffer"
+			value="15"
+			description="I minuti con cui ampliare (in eccesso e in difetto) la finetra di apertura degli SR [INT]"
+		/>
+		<setting
+			name="QueryExporterRemotingPort"
+			value="9555"
+			description="Porta su cui aprire il socket server per il remoting del modulo &quot;QueryExporter&quot; [INT]"
+		/>
+		<setting
+			name="QueryExporterRetrySeconds"
+			value="60"
+			description="Dopo quanti secondi ritentare la generazione e l'invio delle query fallite [INT]"
+		/>
+		<setting
+			name="QueryExporterUseSecurity"
+			value="true"
+			description="Indica se attivare le funzioni di autenticazione sul canale del remoting [BOOLEAN]"
+		/>
+	</settings>
+	<modules>
+		<!--
+			Modulo di importazione degli SMS dal DB dell'SMSC al
+			database del servizio.
+									***
+			L'intervallo di importazione e' dato dal settaggio:
+			"SmsImportInterval".
+		-->
+		<module
+			name="SmsImporter"
+			assembly="SmsImporter.dll"
+			class="URMET.GasProject.Modules.SmsImporter"
+			priority="normal"
+		/>
+		<!--
+			Modulo di elaborazione degli SMS.
+									***
+			L'intervallo di importazione e' dato dal settaggio:
+			"SmsManagerInterval".
+		-->
+		<module
+			name="SmsManager"
+			assembly="SmsManager.dll"
+			class="URMET.GasProject.Modules.SmsManager"
+			priority="normal"
+		/>
+		<!--
+			Modulo che crea i report giornalieri sugli eventi dei
+			serbatoi.
+									***
+			Utilizza i seguenti settaggi:
+			"EventsGsmNumbers" -> Elenco dei destinatari degli SMS
+									***
+			E' possibile specificare una data personalizzata da usare al
+			posto di "DateTime.Now", valorizzando il settaggio:
+			"_ReportCustomNowDate"
+		-->
+		<module
+			name="TankEventsReportEcogas"
+			assembly="TankEventsReportEcogas.dll"
+			class="URMET.GasProject.Modules.Ecogas.TankEventsReport"
+			priority="normal"
+		/>
+		<!--
+			Modulo che controlla se vi sono degli SMS persi (giornalieri
+			e/o qindicinali).
+									***
+			Utilizza i seguenti settaggi:
+			"SRActivityBuffer" -> Ampliamento della finestra di apertura SR
+		-->
+		<module
+			name="SmsLostCheckerLiquigas"
+			assembly="SmsLostCheckerLiquigas.dll"
+			class="URMET.GasProject.Modules.Liquigas.SmsLostChecker"
+			priority="normal"
+		/>
+		<!--
+			Permette al sito web di accodare delle query "pesanti"
+			da eseguire sul DB. Il risultato verrà poi inviato via
+			mail al richiedente.
+									***
+			Utilizza i seguenti settaggi:
+			"QueryExporterRemotingPort" -> Porta per il remoting
+			"QueryExporterRetrySeconds" -> Intervallo per ritentare
+			"QueryExporterUseSecurity"	-> Sicurezza sul canale
+			"SenderMail"                -> Mail del mittente
+		-->
+		<module
+			name="QueryExporter"
+			assembly="QueryExporter.dll"
+			class="URMET.GasProject.Modules.QueryExporter"
+			priority="low"
+		/>
+    <!-- 			Modulo di generazione dei ticket partendo dagli allarmi.
+								    ***
+		    L'intervallo di importazione e' dato dal settaggio:
+		    "TicketGeneratorInterval".
+								    ***
+		    Altri settaggi utilizzati sono:
+		    "WebSiteUrlReferer" -> URL del sito di GasProject
+  		
+    -->
+    <module
+      name="TicketGeneratorLiquigas"
+      assembly="TicketGeneratorLiquigas.dll"
+      class="URMET.GasProject.Modules.Liquigas.TicketGenerator"
+      priority="normal" />
+  </modules>
+</service>

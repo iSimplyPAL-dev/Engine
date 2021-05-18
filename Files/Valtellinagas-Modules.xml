@@ -1,0 +1,297 @@
+<service>
+	<settings>
+		<!--
+			I seguenti settaggi verranno creati nel DB qualora
+			non esistano ancora. Se esistono gia' non verranno
+			modificati.
+		-->
+		<setting
+			name="_ReportCustomNowDate"
+			value=""
+			description="La data da usare al posto di &quot;DateTime.Now&quot; nei report [dd-MM-yyyy--HH-mm-ss | EMPTY]"
+		/>
+		<setting
+			name="AdministrativeMail"
+			value="marco.francese@polimatica.it;marco.cavallo@urmet.it"
+			description="Indirizzi mail a cui spedire i messaggi amministrativi [STRING]"
+		/>
+		<setting
+			name="SenderMail"
+			value="gasproject@urmet.it"
+			description="Indirizzo mail da cui spedire i messaggi [STRING]"
+		/>
+		<setting
+			name="AnagImportInterval"
+			value="15"
+			description="Ogni quanti secondi controllare se ci sono file da importare [INT]"
+		/>
+		<setting
+			name="AnagImportSourceFolder"
+			value=""
+			description="La cartella contenente i file da importare [STRING]"
+		/>
+		<setting
+			name="AnagImportStoreFolder"
+			value=""
+			description="La cartella in cui mettere i file importati [STRING]"
+		/>
+		<setting
+			name="DefaultMeterFactor"
+			value="100"
+			description="Indica il valore per moltiplicare i consumi e ottenere valori allineati [SHORT]"
+		/>
+		<setting
+			name="ReportStoreFolder"
+			value=""
+			description="La cartella in cui mettere i file dei report generati [STRING]"
+		/>
+		<setting
+			name="ReportBackupFolder"
+			value=""
+			description="La cartella in cui fare il backup dei file dei report generati [STRING]"
+		/>
+		<setting
+			name="SmsManagerInterval"
+			value="5"
+			description="Ogni quanti secondi controllare se ci sono SMS da elaborare [INT]"
+		/>
+		<setting
+			name="SmsImportInterval"
+			value="5"
+			description="Ogni quanti secondi controllare se ci sono SMS da importare [INT]"
+		/>
+		<setting
+			name="SMTPServer"
+			value="10.1.1.7"
+			description="L'indirizzo del server SMTP usato per inviare le mail [STRING]"
+		/>
+		<setting
+			name="UniqueSmsReceiver"
+			value="3399945206"
+			description="Il numero dell'unico ricevitore (SMS-C) su cui inviare tutti gli SMS [STRING]"
+		/>
+		<setting
+			name="SRActivityBuffer"
+			value="15"
+			description="I minuti con cui ampliare (in eccesso e in difetto) la finetra di apertura degli SR [INT]"
+		/>
+		<setting
+			name="InvoiceInterval"
+			value="3600"
+			description="Ogni quanti secondi richiamare la StoredProcedure per l'aggiornamento della tabella LIQUIGAS_INVOICE [INT]"
+		/>
+		<setting
+			name="TicketGeneratorInterval"
+			value="15"
+			description="Ogni quanti secondi generare eventuali ticket partendo dagli allarmi [INT]"
+		/>
+		<setting
+			name="QueryExporterRemotingPort"
+			value="9556"
+			description="Porta su cui aprire il socket server per il remoting del modulo &quot;QueryExporter&quot; [INT]"
+		/>
+		<setting
+			name="QueryExporterRetrySeconds"
+			value="60"
+			description="Dopo quanti secondi ritentare la generazione e l'invio delle query fallite [INT]"
+		/>
+		<setting
+			name="QueryExporterUseSecurity"
+			value="true"
+			description="Indica se attivare le funzioni di autenticazione sul canale del remoting [BOOLEAN]"
+		/>
+		<setting
+			name="DailySmsLimit"
+			value="20"
+			description="Indica il numero massimo di SMS che un SR puo' spedire in un giorno [INT]"
+		/>
+		<setting
+			name="DailySmsLimitMail"
+			value=""
+			description="Gli indirizzi a cui inviare le notifiche degli SR disabilitati per eccessivo invio di SMS [STRING]"
+		/>
+		<setting
+			name="WebSiteUrlReferer"
+			value="http://uty.liquigas.com/gpvaltellina/"
+			description="Riferimento all'URL del sito web di GasProject [STRING]"
+		/>
+	</settings>
+	<modules>
+		<!--
+			Modulo di importazione degli SMS dal DB dell'SMSC al
+			database del servizio.
+									***
+			L'intervallo di importazione e' dato dal settaggio:
+			"SmsImportInterval".
+		-->
+		<module
+			name="SmsImporter"
+			assembly="SmsImporter.dll"
+			class="URMET.GasProject.Modules.SmsImporter"
+			priority="normal"
+		/>
+		<!--
+			Modulo di elaborazione degli SMS.
+									***
+			L'intervallo di importazione e' dato dal settaggio:
+			"SmsManagerInterval".
+		-->
+		<module
+			name="SmsManager"
+			assembly="SmsManager.dll"
+			class="URMET.GasProject.Modules.SmsManager"
+			priority="normal"
+		/>
+		<!--
+			Modulo di importazione delle anagrafiche da file.
+									***
+			L'intervallo di importazione e' dato dal settaggio:
+			"AnagImportInterval".
+									***
+			Altri settaggi utilizzati sono:
+			"AnagImportSourceFolder" -> Cartella di origine
+			"AnagImportStoreFolder"  -> Cartella di backup
+			"AdministrativeMail"     -> Mail degli amministratori
+			"SenderMail"             -> Mail del mittente
+		-->
+		<module
+			name="AnagImporterLiquigas"
+			assembly="AnagImporterLiquigas.dll"
+			class="URMET.GasProject.Modules.Liquigas.AnagImporter"
+			priority="normal"
+		/>
+		<!--
+			Modulo che esegue la verifica degli impianti che devono
+			uscire dalla quarantena.
+									***
+			Non usa settaggi.
+		-->
+		<module
+			name="QuarantineCheckerLiquigas"
+			assembly="QuarantineCheckerLiquigas.dll"
+			class="URMET.GasProject.Modules.Liquigas.QuarantineChecker"
+			priority="normal"
+		/>
+		<!--
+			Modulo che crea i report giornalieri sugli eventi dei
+			serbatoi.
+									***
+			Utilizza i seguenti settaggi:
+			"ReportStoreFolder"  -> Cartella in cui mettere i report
+			"ReportBackupFolder" -> Cartella in cui backuppare i report
+									***
+			E' possibile specificare una data personalizzata da usare al
+			posto di "DateTime.Now", valorizzando il settaggio:
+			"_ReportCustomNowDate"
+		-->
+		<module
+			name="TankEventsReportLiquigas"
+			assembly="TankEventsReportLiquigas.dll"
+			class="URMET.GasProject.Modules.Liquigas.TankEventsReport"
+			priority="normal"
+		/>
+		<!--
+			Modulo che crea i report (due volte al mese) sui consumi dei
+			contatori e sui livelli dei serbatoi.
+									***
+			Utilizza i seguenti settaggi:
+			"ReportStoreFolder"  -> Cartella in cui mettere i report
+			"ReportBackupFolder" -> Cartella in cui backuppare i report
+									***
+			E' possibile specificare una data personalizzata da usare al
+			posto di "DateTime.Now", valorizzando il settaggio:
+			"_ReportCustomNowDate"
+		-->
+		<module
+			name="LevelsReportLiquigas"
+			assembly="LevelsReportLiquigas.dll"
+			class="URMET.GasProject.Modules.Liquigas.LevelsReport"
+			priority="normal"
+		/>
+		<!--
+			Modulo che controlla se vi sono degli SMS persi (giornalieri
+			e/o qindicinali).
+									***
+			Utilizza i seguenti settaggi:
+			"SRActivityBuffer" -> Ampliamento della finestra di apertura SR
+		-->
+		<module
+			name="SmsLostCheckerLiquigas"
+			assembly="SmsLostCheckerLiquigas.dll"
+			class="URMET.GasProject.Modules.Liquigas.SmsLostChecker"
+			priority="normal"
+		/>
+		<!--
+			Modulo che richiama la StoredProcedure per l'aggiornamento della
+			tabella LIQUIGAS_INVOICE.
+									***
+			L'intervallo di importazione e' dato dal settaggio:
+			"InvoiceInterval".
+		-->
+		<module
+			name="InvoiceLiquigas"
+			assembly="InvoiceLiquigas.dll"
+			class="URMET.GasProject.Modules.Liquigas.Invoice"
+			priority="low"
+		/>
+		<!--
+			Modulo che genera gli allarmi di "asta bloccata" e "allerta di
+			perdita" in base ai consumi e ai livelli.
+									***
+			Non usa settaggi.
+		-->
+		<module
+			name="GaugeCheckerLiquigas"
+			assembly="GaugeCheckerLiquigas.dll"
+			class="URMET.GasProject.Modules.Liquigas.GaugeChecker"
+			priority="low"
+		/>
+		<!--
+			Modulo di generazione dei ticket partendo dagli allarmi.
+									***
+			L'intervallo di importazione e' dato dal settaggio:
+			"TicketGeneratorInterval".
+									***
+			Altri settaggi utilizzati sono:
+			"WebSiteUrlReferer" -> URL del sito di GasProject
+		-->
+		<module
+			name="TicketGeneratorLiquigas"
+			assembly="TicketGeneratorLiquigas.dll"
+			class="URMET.GasProject.Modules.Liquigas.TicketGenerator"
+			priority="normal"
+		/>
+		<!--
+			Permette al sito web di accodare delle query "pesanti"
+			da eseguire sul DB. Il risultato verra' poi inviato via
+			mail al richiedente.
+									***
+			Utilizza i seguenti settaggi:
+			"QueryExporterRemotingPort" -> Porta per il remoting
+			"QueryExporterRetrySeconds" -> Intervallo per ritentare
+			"QueryExporterUseSecurity"	-> Sicurezza sul canale
+			"SenderMail"                -> Mail del mittente
+		-->
+		<module
+			name="QueryExporter"
+			assembly="QueryExporter.dll"
+			class="URMET.GasProject.Modules.QueryExporter"
+			priority="low"
+		/>
+		<!--
+			Verifica che gli SR non inviino troppi SMS nell'arco di un
+			giorno. Se il limite viene superato all'SR verra' inviato un
+			comando per dirgli di non spedire piu'.
+									***
+			Utilizza i seguenti settaggi:
+			"DailySmsLimit"     -> Numero massimo di SMS al giorno
+			"DailySmsLimitMail" -> Indirizzi a cui inviare le notifiche
+		-->
+		<module
+			name="SmsLimiterLiquigas"
+			assembly="SmsLimiterLiquigas.dll"
+			class="URMET.GasProject.Modules.Liquigas.SmsLimiter"
+			priority="low"
+		/>
+	</modules>
+</service>
